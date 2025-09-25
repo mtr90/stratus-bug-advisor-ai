@@ -24,15 +24,9 @@
       "dest": "/frontend/$1"
     }
   ],
-  "env": {
-    "CLAUDE_API_KEY": "@claude_api_key",
-    "DATABASE_URL": "@database_url",
-    "SUPABASE_URL": "@supabase_url",
-    "SUPABASE_ANON_KEY": "@supabase_anon_key"
-  },
-  "build": {
-    "env": {
-      "PYTHON_VERSION": "3.11"
+  "functions": {
+    "backend/app.py": {
+      "runtime": "python3.9"
     }
   }
 }
