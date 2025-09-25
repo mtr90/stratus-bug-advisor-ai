@@ -1,38 +1,40 @@
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button.jsx'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card.jsx'
-import { Textarea } from '@/components/ui/textarea.jsx'
-import { Badge } from '@/components/ui/badge.jsx'
-import { Alert, AlertDescription } from '@/components/ui/alert.jsx'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs.jsx'
-import { 
-  Bug, 
-  Search, 
-  Loader2, 
-  CheckCircle, 
-  AlertCircle, 
-  FileText, 
-  Settings, 
-  Moon, 
+import React, { useState, useEffect } from 'react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './components/ui/card'
+import { Button } from './components/ui/button'
+import { Textarea } from './components/ui/textarea'
+import { Badge } from './components/ui/badge'
+import { Alert, AlertDescription } from './components/ui/alert'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs'
+import AdminDashboard from './components/AdminDashboard'
+import {
+  Bug,
+  Search,
+  Loader2,
   Sun,
-  Database,
-  Code,
+  Moon,
+  Settings,
+  CheckCircle,
+  AlertCircle,
+  Target,
+  Wrench,
+  FileText,
   TestTube,
   History,
-  Target,
-  Wrench
+  Database,
+  FileSpreadsheet,
+  Calculator,
+  MapPin
 } from 'lucide-react'
 import './App.css'
-import AdminDashboard from './components/AdminDashboard.jsx'
 
 // Product configurations
 const PRODUCTS = [
   {
     id: 'allocator',
     name: 'Allocator',
+    icon: Database,
+    color: 'bg-blue-600',
     description: 'TTS tickets, geocoding issues, batch processing',
-    icon: Target,
-    color: 'bg-blue-500',
     examples: [
       'TTS-2298 match code 3 geocoding error',
       'Batch allocation timeout during processing',
@@ -42,9 +44,9 @@ const PRODUCTS = [
   {
     id: 'formsplus',
     name: 'FormsPlus',
+    icon: FileSpreadsheet,
+    color: 'bg-green-600',
     description: 'ClickUp tickets, form tree, validation issues',
-    icon: FileText,
-    color: 'bg-green-500',
     examples: [
       'Form tree navigation not loading properly',
       'Field validation rules not applying correctly',
@@ -54,25 +56,25 @@ const PRODUCTS = [
   {
     id: 'premium_tax',
     name: 'Premium Tax',
+    icon: Calculator,
+    color: 'bg-orange-600',
     description: 'Tax calculations, e-filing, compliance',
-    icon: Database,
-    color: 'bg-orange-500',
     examples: [
       'Tax calculation discrepancy in quarterly filing',
-      'E-filing service returning validation errors',
+      'E-filing submission returning validation errors',
       'Rate table updates not reflecting in calculations'
     ]
   },
   {
     id: 'municipal',
     name: 'Municipal',
+    icon: MapPin,
+    color: 'bg-purple-600',
     description: 'Municipal codes, rates, jurisdiction mapping',
-    icon: Code,
-    color: 'bg-purple-500',
     examples: [
       'Municipal code lookup returning incorrect rates',
       'Jurisdiction boundary mapping issues',
-      'Data import failing for new municipal codes'
+      'Rate effective date conflicts in system'
     ]
   }
 ]
@@ -86,9 +88,19 @@ function App() {
   const [isDark, setIsDark] = useState(true)
   const [activeTab, setActiveTab] = useState('analyzer')
 
+  // Debug selectedProduct changes
+  useEffect(() => {
+    console.log('selectedProduct changed to:', selectedProduct)
+  }, [selectedProduct])
+
   // Theme toggle
   useEffect(() => {
-    document.documentElement.classList.toggle('dark', isDark)
+    console.log('Theme changing to:', isDark ? 'dark' : 'light')
+    if (isDark) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
   }, [isDark])
 
   // Handle query submission
@@ -148,23 +160,29 @@ function App() {
       
       const getSectionIcon = (title) => {
         if (title.toLowerCase().includes('root cause')) return Target
-        if (title.toLowerCase().includes('solutions')) return Wrench
+        if (title.toLowerCase().includes('immediate')) return Wrench
         if (title.toLowerCase().includes('files')) return FileText
         if (title.toLowerCase().includes('testing')) return TestTube
         if (title.toLowerCase().includes('historical')) return History
         return Bug
       }
       
-      const Icon = getSectionIcon(title)
+      const SectionIcon = getSectionIcon(title)
       
       return (
-        <div key={index} className="mb-6 opacity-0 animate-in fade-in duration-500" style={{ animationDelay: `${index * 100}ms` }}>
+        <div key={index} className="mb-6 last:mb-0">
           <div className="flex items-center gap-2 mb-3">
-            <Icon className="w-5 h-5 text-primary" />
-            <h3 className="text-lg font-semibold text-primary">{title}</h3>
+            <SectionIcon className="w-5 h-5 text-primary" />
+            <h3 className="text-lg font-semibold text-foreground">{title}</h3>
           </div>
-          <div className="pl-7 text-foreground/90 whitespace-pre-wrap leading-relaxed">
-            {content}
+          <div className="pl-7">
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+              {content.split('\n').map((line, lineIndex) => (
+                <p key={lineIndex} className="mb-2 text-muted-foreground leading-relaxed">
+                  {line.trim()}
+                </p>
+              ))}
+            </div>
           </div>
         </div>
       )
@@ -172,7 +190,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
       {/* Header */}
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4">
@@ -190,7 +208,10 @@ function App() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setIsDark(!isDark)}
+                onClick={() => {
+                  console.log('Theme toggle clicked, current isDark:', isDark)
+                  setIsDark(!isDark)
+                }}
                 className="w-9 h-9"
               >
                 {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
@@ -237,7 +258,12 @@ function App() {
                           ? 'ring-2 ring-primary bg-primary/5' 
                           : 'hover:border-primary/50'
                       }`}
-                      onClick={() => setSelectedProduct(product.id)}
+                      onClick={() => {
+                        console.log('Product selected:', product.id)
+                        setSelectedProduct(product.id)
+                        setError(null)
+                        setResponse(null)
+                      }}
                     >
                       <CardHeader className="pb-3">
                         <div className="flex items-center gap-3">
@@ -260,9 +286,14 @@ function App() {
               </div>
             </div>
 
+            {/* Debug Info */}
+            <div className="text-xs text-muted-foreground">
+              Debug: selectedProduct = "{selectedProduct}", isDark = {isDark.toString()}
+            </div>
+
             {/* Query Input */}
             {selectedProduct && (
-              <div className="space-y-4 opacity-0 animate-in fade-in duration-500">
+              <div className="space-y-4 transition-all duration-300 ease-in-out border border-green-500 p-4 rounded-lg">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold text-foreground">Describe Your Bug</h2>
                   <Badge variant="secondary" className="text-xs">
@@ -323,7 +354,7 @@ function App() {
 
             {/* Error Display */}
             {error && (
-              <Alert className="border-red-500/20 bg-red-500/10 text-red-400 opacity-0 animate-in fade-in duration-300">
+              <Alert className="border-red-500/20 bg-red-500/10 text-red-400 transition-all duration-300 ease-in-out">
                 <AlertCircle className="h-4 w-4" />
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
@@ -331,7 +362,7 @@ function App() {
 
             {/* Response Display */}
             {response && (
-              <div className="space-y-6 opacity-0 animate-in fade-in duration-500">
+              <div className="space-y-6 transition-all duration-300 ease-in-out">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold text-foreground">AI Analysis Results</h2>
                   <div className="flex items-center gap-2">

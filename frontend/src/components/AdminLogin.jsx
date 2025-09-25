@@ -114,14 +114,7 @@ const AdminLogin = ({ onLogin }) => {
             </Button>
           </form>
 
-          <div className="mt-6 p-4 bg-slate-700/50 rounded-lg">
-            <p className="text-sm text-slate-400 mb-2">Default Credentials:</p>
-            <p className="text-xs text-slate-500">Username: admin</p>
-            <p className="text-xs text-slate-500">Password: stratus2024!</p>
-            <p className="text-xs text-slate-500 mt-2">
-              Change these in production via environment variables
-            </p>
-          </div>
+
         </CardContent>
       </Card>
     </div>
