@@ -286,14 +286,11 @@ function App() {
               </div>
             </div>
 
-            {/* Debug Info */}
-            <div className="text-xs text-muted-foreground">
-              Debug: selectedProduct = "{selectedProduct}", isDark = {isDark.toString()}
-            </div>
+
 
             {/* Query Input */}
             {selectedProduct && (
-              <div className="space-y-4 transition-all duration-300 ease-in-out border border-green-500 p-4 rounded-lg">
+              <div className="space-y-4 transition-all duration-300 ease-in-out">
                 <div className="flex items-center justify-between">
                   <h2 className="text-xl font-semibold text-foreground">Describe Your Bug</h2>
                   <Badge variant="secondary" className="text-xs">

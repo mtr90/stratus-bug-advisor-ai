@@ -31,30 +31,22 @@ CORS(app, origins=[
     'https://*.vercel.app'
 ], supports_credentials=True)
 
-# Initialize Claude client
-claude_client = None
-claude_api_key = os.getenv('CLAUDE_API_KEY')
-
-# Debug environment variables
-print(f"DEBUG: CLAUDE_API_KEY exists: {claude_api_key is not None}")
-print(f"DEBUG: CLAUDE_API_KEY length: {len(claude_api_key) if claude_api_key else 0}")
-print(f"DEBUG: CLAUDE_API_KEY starts with sk-ant: {claude_api_key.startswith('sk-ant') if claude_api_key else False}")
-
-try:
-    if claude_api_key and claude_api_key.startswith('sk-ant'):
-        print(f"DEBUG: Attempting to create Claude client with key: {claude_api_key[:20]}...")
-        claude_client = anthropic.Anthropic(api_key=claude_api_key)
-        logging.info("Claude client initialized successfully")
-        print("DEBUG: Claude client created successfully")
-    else:
-        logging.warning(f"Claude API key not provided or invalid format. Key: {claude_api_key[:20] if claude_api_key else 'None'}...")
-        print(f"DEBUG: Claude API key issue - provided: {claude_api_key is not None}, format: {claude_api_key.startswith('sk-ant') if claude_api_key else False}")
-except Exception as e:
-    logging.error(f"Failed to initialize Claude client: {e}")
-    print(f"DEBUG: Claude client initialization error: {e}")
-    print(f"DEBUG: Error type: {type(e).__name__}")
-    import traceback
-    print(f"DEBUG: Full traceback: {traceback.format_exc()}")
+# Claude client - initialize lazily
+def get_claude_client():
+    """Get Claude client, initializing it if needed"""
+    claude_api_key = os.getenv('CLAUDE_API_KEY')
+    
+    if not claude_api_key:
+        raise Exception("CLAUDE_API_KEY environment variable not set")
+    
+    if not claude_api_key.startswith('sk-ant'):
+        raise Exception(f"Invalid Claude API key format. Expected 'sk-ant...', got '{claude_api_key[:10]}...'")
+    
+    try:
+        client = anthropic.Anthropic(api_key=claude_api_key)
+        return client
+    except Exception as e:
+        raise Exception(f"Failed to create Claude client: {str(e)}")
 
 # Simple authentication
 def require_auth(f):
@@ -89,10 +81,20 @@ Focus on {product}-specific technical solutions with actionable steps."""
 @app.route('/api/health')
 def health_check():
     claude_api_key = os.getenv('CLAUDE_API_KEY')
+    claude_available = False
+    claude_error = None
+    
+    try:
+        client = get_claude_client()
+        claude_available = True
+    except Exception as e:
+        claude_error = str(e)
+    
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.now().isoformat(),
-        'claude_available': claude_client is not None,
+        'claude_available': claude_available,
+        'claude_error': claude_error,
         'claude_key_exists': claude_api_key is not None,
         'claude_key_length': len(claude_api_key) if claude_api_key else 0,
         'claude_key_format': claude_api_key.startswith('sk-ant') if claude_api_key else False,
@@ -118,16 +120,12 @@ def analyze_bug():
                 'message': 'Query must be at least 10 characters long'
             }), 400
         
-        if not claude_client:
-            claude_api_key = os.getenv('CLAUDE_API_KEY')
+        try:
+            claude_client = get_claude_client()
+        except Exception as e:
             return jsonify({
                 'error': 'AI service unavailable',
-                'message': 'Claude API is not configured',
-                'debug': {
-                    'key_exists': claude_api_key is not None,
-                    'key_length': len(claude_api_key) if claude_api_key else 0,
-                    'key_format': claude_api_key.startswith('sk-ant') if claude_api_key else False
-                }
+                'message': f'Claude API error: {str(e)}'
             }), 503
         
         system_prompt = get_system_prompt(product)
@@ -257,11 +255,7 @@ def get_admin_stats():
 @require_auth
 def test_claude_connection():
     try:
-        if not claude_client:
-            return jsonify({
-                'status': 'error',
-                'message': 'Claude API key not configured'
-            }), 400
+        claude_client = get_claude_client()
         
         # Test with a simple message
         message = claude_client.messages.create(
