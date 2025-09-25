@@ -42,6 +42,7 @@ print(f"DEBUG: CLAUDE_API_KEY starts with sk-ant: {claude_api_key.startswith('sk
 
 try:
     if claude_api_key and claude_api_key.startswith('sk-ant'):
+        print(f"DEBUG: Attempting to create Claude client with key: {claude_api_key[:20]}...")
         claude_client = anthropic.Anthropic(api_key=claude_api_key)
         logging.info("Claude client initialized successfully")
         print("DEBUG: Claude client created successfully")
@@ -51,6 +52,9 @@ try:
 except Exception as e:
     logging.error(f"Failed to initialize Claude client: {e}")
     print(f"DEBUG: Claude client initialization error: {e}")
+    print(f"DEBUG: Error type: {type(e).__name__}")
+    import traceback
+    print(f"DEBUG: Full traceback: {traceback.format_exc()}")
 
 # Simple authentication
 def require_auth(f):
