@@ -33,15 +33,24 @@ CORS(app, origins=[
 
 # Initialize Claude client
 claude_client = None
+claude_api_key = os.getenv('CLAUDE_API_KEY')
+
+# Debug environment variables
+print(f"DEBUG: CLAUDE_API_KEY exists: {claude_api_key is not None}")
+print(f"DEBUG: CLAUDE_API_KEY length: {len(claude_api_key) if claude_api_key else 0}")
+print(f"DEBUG: CLAUDE_API_KEY starts with sk-ant: {claude_api_key.startswith('sk-ant') if claude_api_key else False}")
+
 try:
-    claude_api_key = os.getenv('CLAUDE_API_KEY')
-    if claude_api_key:
+    if claude_api_key and claude_api_key.startswith('sk-ant'):
         claude_client = anthropic.Anthropic(api_key=claude_api_key)
         logging.info("Claude client initialized successfully")
+        print("DEBUG: Claude client created successfully")
     else:
-        logging.warning("Claude API key not provided")
+        logging.warning(f"Claude API key not provided or invalid format. Key: {claude_api_key[:20] if claude_api_key else 'None'}...")
+        print(f"DEBUG: Claude API key issue - provided: {claude_api_key is not None}, format: {claude_api_key.startswith('sk-ant') if claude_api_key else False}")
 except Exception as e:
     logging.error(f"Failed to initialize Claude client: {e}")
+    print(f"DEBUG: Claude client initialization error: {e}")
 
 # Simple authentication
 def require_auth(f):
@@ -75,10 +84,14 @@ Focus on {product}-specific technical solutions with actionable steps."""
 # Routes
 @app.route('/api/health')
 def health_check():
+    claude_api_key = os.getenv('CLAUDE_API_KEY')
     return jsonify({
         'status': 'healthy',
         'timestamp': datetime.now().isoformat(),
         'claude_available': claude_client is not None,
+        'claude_key_exists': claude_api_key is not None,
+        'claude_key_length': len(claude_api_key) if claude_api_key else 0,
+        'claude_key_format': claude_api_key.startswith('sk-ant') if claude_api_key else False,
         'version': '1.0.0'
     })
 
@@ -102,9 +115,15 @@ def analyze_bug():
             }), 400
         
         if not claude_client:
+            claude_api_key = os.getenv('CLAUDE_API_KEY')
             return jsonify({
                 'error': 'AI service unavailable',
-                'message': 'Claude API is not configured'
+                'message': 'Claude API is not configured',
+                'debug': {
+                    'key_exists': claude_api_key is not None,
+                    'key_length': len(claude_api_key) if claude_api_key else 0,
+                    'key_format': claude_api_key.startswith('sk-ant') if claude_api_key else False
+                }
             }), 503
         
         system_prompt = get_system_prompt(product)
